@@ -11,18 +11,18 @@ import com.couchbase.lite.Database;
 import com.couchbase.lite.DatabaseConfiguration;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.Expression;
-import com.couchbase.lite.FullTextQueryRow;
 import com.couchbase.lite.IndexOptions;
 import com.couchbase.lite.IndexType;
 import com.couchbase.lite.LiveQuery;
 import com.couchbase.lite.LiveQueryChange;
 import com.couchbase.lite.LiveQueryChangeListener;
 import com.couchbase.lite.Query;
-import com.couchbase.lite.QueryRow;
 import com.couchbase.lite.Replicator;
 import com.couchbase.lite.ReplicatorChangeListener;
 import com.couchbase.lite.ReplicatorConfiguration;
+import com.couchbase.lite.Result;
 import com.couchbase.lite.ResultSet;
+import com.couchbase.lite.SelectResult;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,9 +53,9 @@ public class MainActivity extends AppCompatActivity {
 
         // create document
         Document newTask = new Document();
-        newTask.set("type", "task");
-        newTask.set("owner", "todo");
-        newTask.set("createdAt", new Date());
+        newTask.setString("type", "task");
+        newTask.setString("owner", "todo");
+        newTask.setDate("createdAt", new Date());
         try {
             database.save(newTask);
         } catch (CouchbaseLiteException e) {
@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // mutate document
-        newTask.set("name", "Apples");
+        newTask.setString("name", "Apples");
         try {
             database.save(newTask);
         } catch (CouchbaseLiteException e) {
@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // typed accessors
-        newTask.set("createdAt", new Date());
+        newTask.setDate("createdAt", new Date());
         Date date = newTask.getDate("createdAt");
 
         // database transaction
@@ -82,8 +82,8 @@ public class MainActivity extends AppCompatActivity {
                 public void run() {
                     for (int i = 0; i < 10; i++) {
                         Document doc = new Document();
-                        doc.set("type", "user");
-                        doc.set("name", String.format("user %s", i));
+                        doc.setString("type", "user");
+                        doc.setString("name", String.format("user %s", i));
                         try {
                             finalDatabase.save(doc);
                         } catch (CouchbaseLiteException e) {
@@ -106,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         Blob blob = new Blob("image/jpg", inputStream);
-        newTask.set("avatar", blob);
+        newTask.setBlob("avatar", blob);
         try {
             database.save(newTask);
         } catch (CouchbaseLiteException e) {
@@ -127,9 +127,9 @@ public class MainActivity extends AppCompatActivity {
         } catch (CouchbaseLiteException e) {
             Log.e("app", "Failed to run query", e);
         }
-        QueryRow row;
+        Result row;
         while ((row = rows.next()) != null) {
-            Log.d("app", String.format("doc ID :: %s", row.getDocumentID()));
+            Log.d("app", String.format("doc ID :: %s", row.getString(0)));
         }
 
         // live query
@@ -142,8 +142,8 @@ public class MainActivity extends AppCompatActivity {
         });
         liveQuery.run();
         Document newDoc = new Document();
-        newDoc.set("type", "user");
-        newDoc.set("admin", false);
+        newDoc.setString("type", "user");
+        newDoc.setBoolean("admin", false);
         try {
             database.save(newDoc);
         } catch (CouchbaseLiteException e) {
@@ -155,8 +155,8 @@ public class MainActivity extends AppCompatActivity {
         List<String> tasks = new ArrayList<>(Arrays.asList("buy groceries", "play chess", "book travels", "buy museum tickets"));
         for (String task : tasks) {
             Document doc = new Document();
-            doc.set("type", "task");
-            doc.set("name", task);
+            doc.setString("type", "task");
+            doc.setString("name", task);
             try {
                 database.save(doc);
             } catch (CouchbaseLiteException e) {
@@ -182,9 +182,9 @@ public class MainActivity extends AppCompatActivity {
         } catch (CouchbaseLiteException e) {
             Log.e("app", "Failed to run query", e);
         }
-        FullTextQueryRow ftsRow;
-        while ((ftsRow = (FullTextQueryRow) ftsQueryResult.next()) != null) {
-            Log.d("app", String.format("document properties :: %s", ftsRow.getDocument().toMap()));
+        Result ftsRow;
+        while ((ftsRow = ftsQueryResult.next()) != null) {
+            Log.d("app", String.format("document properties :: %s", ftsRow.getString(0)));
         }
 
         // create conflict
@@ -195,9 +195,9 @@ public class MainActivity extends AppCompatActivity {
          * 3. Read the document after the second save operation and verify its property is as expected.
          */
         Document theirs = new Document("buzz");
-        theirs.set("status", "theirs");
+        theirs.setString("status", "theirs");
         Document mine = new Document("buzz");
-        mine.set("status", "mine");
+        mine.setString("status", "mine");
         try {
             database.save(theirs);
             database.save(mine);
